@@ -1,4 +1,4 @@
-import type { Metadata } from "next";
+import type { Metadata, Viewport } from "next";
 import { Inter } from "next/font/google";
 import "./globals.css";
 
@@ -12,6 +12,13 @@ export const metadata: Metadata = {
   description: "A dynamic, high-speed scrollytelling journey of an erupting matcha latte.",
 };
 
+export const viewport: Viewport = {
+  width: "device-width",
+  initialScale: 1,
+  maximumScale: 1,
+  userScalable: false,
+};
+
 export default function RootLayout({
   children,
 }: Readonly<{
@@ -20,9 +27,9 @@ export default function RootLayout({
   return (
     <html
       lang="en"
-      className={`${inter.variable} h-full antialiased`}
+      className={`${inter.variable} antialiased`}
     >
-      <body className={`${inter.className} min-h-full flex flex-col font-sans overflow-x-hidden bg-[#050505] text-white`}>{children}</body>
+      <body className={`${inter.className} font-sans bg-[#050505] text-white`}>{children}</body>
     </html>
   );
 }

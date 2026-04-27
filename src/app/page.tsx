@@ -15,7 +15,7 @@ export const metadata = {
 
 export default function Home() {
   return (
-    <main className="min-h-screen bg-[#050505] font-sans antialiased selection:bg-[#A4C639] selection:text-[#050505] flex flex-col">
+    <main className="min-h-screen bg-[#050505] font-sans antialiased selection:bg-[#A4C639] selection:text-[#050505]">
       <Navbar />
       <MatchaWrapper />
       <DetailsSection />

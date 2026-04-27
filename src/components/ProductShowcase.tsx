@@ -13,7 +13,7 @@ export default function ProductShowcase() {
           whileInView={{ opacity: 1, y: 0 }}
           viewport={{ once: true, margin: "-100px" }}
           transition={{ duration: 1 }}
-          className="w-full lg:w-1/2 relative h-[700px] rounded-[40px] overflow-hidden group"
+          className="w-full lg:w-1/2 relative h-[400px] sm:h-[500px] md:h-[700px] rounded-[40px] overflow-hidden group"
         >
           <div className="absolute inset-0 bg-[#A4C639]/5 mix-blend-overlay z-10 transition-opacity duration-500 group-hover:opacity-0" />
           <img 

@@ -38,7 +38,7 @@ export default function SourcingSection() {
               </p>
             </div>
             
-            <div className="mt-12 flex items-center gap-6">
+            <div className="mt-12 flex flex-wrap items-center gap-6 sm:gap-12">
               <div className="flex flex-col">
                 <span className="text-3xl font-black text-white/90 tracking-tighter">800+</span>
                 <span className="text-xs uppercase tracking-widest text-[#A4C639] mt-1 font-mono">Years of Heritage</span>
@@ -57,7 +57,7 @@ export default function SourcingSection() {
             whileInView={{ opacity: 1, scale: 1 }}
             viewport={{ once: true, margin: "-100px" }}
             transition={{ duration: 1 }}
-            className="relative h-[600px] w-full rounded-3xl overflow-hidden border border-white/10 bg-white/[0.02]"
+            className="relative h-[400px] sm:h-[500px] md:h-[600px] w-full rounded-3xl overflow-hidden border border-white/10 bg-white/[0.02]"
           >
             {/* Cinematic Image Background */}
             <div className="absolute inset-0">

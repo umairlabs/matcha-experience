@@ -31,52 +31,69 @@ function MatchaContent({ images }: { images: HTMLImageElement[] }) {
     const ctx = canvas.getContext("2d");
     if (!ctx) return;
 
-    canvas.width = window.innerWidth;
-    canvas.height = window.innerHeight;
+    const updateCanvasSize = () => {
+      const parent = canvas.parentElement;
+      if (!parent) return;
+      
+      const rect = parent.getBoundingClientRect();
+      const dpr = window.devicePixelRatio || 1;
+      
+      canvas.width = rect.width * dpr;
+      canvas.height = rect.height * dpr;
+      
+      // Force immediate redraw
+      render();
+    };
 
     const render = () => {
       const currentFrame = Math.round(frameIndex.get());
       const img = images[currentFrame];
 
       if (img && img.complete) {
-        ctx.clearRect(0, 0, canvas.width, canvas.height);
+        const parent = canvas.parentElement;
+        if (!parent) return;
+        const rect = parent.getBoundingClientRect();
+        const dpr = window.devicePixelRatio || 1;
+        
+        ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
+        ctx.clearRect(0, 0, rect.width, rect.height);
         
         const imgRatio = img.width / img.height;
-        const canvasRatio = canvas.width / canvas.height;
+        const canvasRatio = rect.width / rect.height;
         
-        let drawWidth = canvas.width;
+        let drawWidth = rect.width;
         let drawHeight = drawWidth / imgRatio;
 
-        if (drawHeight < canvas.height) {
-            drawHeight = canvas.height;
+        if (drawHeight < rect.height) {
+            drawHeight = rect.height;
             drawWidth = drawHeight * imgRatio;
         }
 
-        const x = (canvas.width - drawWidth) / 2;
-        const y = (canvas.height - drawHeight) / 2;
+        const x = (rect.width - drawWidth) / 2;
+        const y = (rect.height - drawHeight) / 2;
 
         ctx.fillStyle = "#050505";
-        ctx.fillRect(0, 0, canvas.width, canvas.height);
-        
+        ctx.fillRect(0, 0, rect.width, rect.height);
         ctx.drawImage(img, x, y, drawWidth, drawHeight);
       }
     };
 
+    const observer = new ResizeObserver(() => {
+      updateCanvasSize();
+    });
+
+    const parent = canvas.parentElement;
+    if (parent) {
+      observer.observe(parent);
+    }
+
     const unsubscribe = frameIndex.on("change", render);
     
-    // Initial render
-    render();
-
-    const handleResize = () => {
-      canvas.width = window.innerWidth;
-      canvas.height = window.innerHeight;
-      render();
-    };
-    window.addEventListener("resize", handleResize);
+    updateCanvasSize();
 
     return () => {
       unsubscribe();
-      window.removeEventListener("resize", handleResize);
+      observer.disconnect();
     };
   }, [frameIndex, images]);
 
@@ -87,11 +104,11 @@ function MatchaContent({ images }: { images: HTMLImageElement[] }) {
   const opacityD = useTransform(smoothProgress, [0.7, 0.75, 1], [0, 1, 1]);
 
   return (
-    <div ref={containerRef} className="relative w-screen bg-[#050505]" style={{ height: "400vh" }}>
-      <div className="sticky top-0 w-screen h-screen overflow-hidden bg-[#050505] m-0 p-0">
-        <canvas ref={canvasRef} className="absolute inset-0 w-full h-full pointer-events-none block" />
+    <div ref={containerRef} className="relative w-full bg-[#050505]" style={{ height: "400vh" }}>
+      <div className="sticky top-0 w-full h-[100dvh] overflow-hidden bg-[#050505]">
+        <canvas ref={canvasRef} className="absolute inset-0 w-full h-full block pointer-events-none" />
 
-        <div className="absolute inset-0 flex flex-col items-center justify-center pointer-events-none text-center m-0 p-0">
+        <div className="absolute inset-0 flex flex-col items-center justify-center pointer-events-none text-center m-0 px-6">
           
           {/* Beat A */}
           <motion.div style={{ opacity: opacityA }} className="absolute flex flex-col items-center">
@@ -101,10 +118,10 @@ function MatchaContent({ images }: { images: HTMLImageElement[] }) {
               transition={{ duration: 1.2, delay: 0.2, ease: [0.16, 1, 0.3, 1] }}
               className="flex flex-col items-center"
             >
-              <h2 className="text-5xl md:text-8xl font-black tracking-tighter text-white/90 mb-4 text-shadow-glow">
+              <h2 className="text-3xl sm:text-5xl md:text-8xl font-black tracking-tighter text-white/90 mb-4 text-shadow-glow">
                 PURE CEREMONIAL
               </h2>
-              <p className="text-xl md:text-2xl text-white/60 font-light max-w-2xl">
+              <p className="text-lg sm:text-xl md:text-2xl text-white/60 font-light max-w-2xl">
                 The art of the perfect pour begins with stillness.
               </p>
             </motion.div>
@@ -112,30 +129,30 @@ function MatchaContent({ images }: { images: HTMLImageElement[] }) {
 
           {/* Beat B */}
           <motion.div style={{ opacity: opacityB }} className="absolute flex flex-col items-center">
-            <h2 className="text-5xl md:text-8xl font-black tracking-tighter text-white/90 mb-4 text-shadow-glow">
+            <h2 className="text-3xl sm:text-5xl md:text-8xl font-black tracking-tighter text-white/90 mb-4 text-shadow-glow">
               THE COLLISION
             </h2>
-            <p className="text-xl md:text-2xl text-white/60 font-light max-w-2xl">
+            <p className="text-lg sm:text-xl md:text-2xl text-white/60 font-light max-w-2xl">
               Rich espresso meets vibrant stone-ground matcha.
             </p>
           </motion.div>
 
           {/* Beat C */}
           <motion.div style={{ opacity: opacityC }} className="absolute flex flex-col items-center">
-            <h2 className="text-5xl md:text-8xl font-black tracking-tighter text-white/90 mb-4 text-shadow-glow">
+            <h2 className="text-3xl sm:text-5xl md:text-8xl font-black tracking-tighter text-white/90 mb-4 text-shadow-glow">
               KINETIC CHILL
             </h2>
-            <p className="text-xl md:text-2xl text-white/60 font-light max-w-2xl">
+            <p className="text-lg sm:text-xl md:text-2xl text-white/60 font-light max-w-2xl">
               Crystalline ice, suspended in a moment of explosive energy.
             </p>
           </motion.div>
 
           {/* Beat D */}
           <motion.div style={{ opacity: opacityD }} className="absolute flex flex-col items-center">
-            <h2 className="text-5xl md:text-8xl font-black tracking-tighter text-white/90 mb-4 text-shadow-glow">
+            <h2 className="text-3xl sm:text-5xl md:text-8xl font-black tracking-tighter text-white/90 mb-4 text-shadow-glow">
               CRAFTED ENERGY
             </h2>
-            <p className="text-xl md:text-2xl text-white/60 font-light max-w-2xl">
+            <p className="text-lg sm:text-xl md:text-2xl text-white/60 font-light max-w-2xl">
               Experience the rush in every drop.
             </p>
           </motion.div>
