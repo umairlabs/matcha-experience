@@ -1,4 +1,4 @@
-import type { Metadata, Viewport } from "next";
+import type { Metadata } from "next";
 import { Inter } from "next/font/google";
 import "./globals.css";
 
@@ -12,13 +12,6 @@ export const metadata: Metadata = {
   description: "A dynamic, high-speed scrollytelling journey of an erupting matcha latte.",
 };
 
-export const viewport: Viewport = {
-  width: "device-width",
-  initialScale: 1,
-  maximumScale: 1,
-  userScalable: false,
-};
-
 export default function RootLayout({
   children,
 }: Readonly<{
@@ -29,6 +22,9 @@ export default function RootLayout({
       lang="en"
       className={`${inter.variable} antialiased`}
     >
+      <head>
+        <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no" />
+      </head>
       <body className={`${inter.className} font-sans bg-[#050505] text-white`}>{children}</body>
     </html>
   );
