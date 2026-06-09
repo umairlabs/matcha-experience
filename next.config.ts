@@ -1,7 +1,7 @@
 import type { NextConfig } from "next";
 
 const nextConfig: NextConfig = {
-  /* config options here */
+  // Use webpack bundler instead of turbopack to avoid Windows filesystem issues
 };
 
 export default nextConfig;

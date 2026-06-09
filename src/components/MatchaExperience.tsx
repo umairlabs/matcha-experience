@@ -1,13 +1,131 @@
 "use client";
 
 import { useEffect, useRef, useState } from "react";
-import { motion, useScroll, useTransform, useSpring } from "framer-motion";
+import { motion, useScroll, useTransform, useSpring, useMotionTemplate } from "framer-motion";
 
-const FRAME_COUNT = 160;
+const FRAME_COUNT = 218;
+
+// Floating particles component - canvas-based for smooth cursor interaction
+function FloatingParticles({ scrollProgress }: { scrollProgress: any }) {
+  const canvasRef = useRef<HTMLCanvasElement>(null);
+  const mouseRef = useRef({ x: -1000, y: -1000 });
+  const particlesRef = useRef<Array<{
+    x: number; y: number;
+    vx: number; vy: number;
+    baseX: number; baseY: number;
+    size: number; opacity: number; color: string;
+  }>>([]);
+  const animFrameRef = useRef<number>(0);
+
+  useEffect(() => {
+    const canvas = canvasRef.current;
+    if (!canvas) return;
+
+    const ctx = canvas.getContext("2d");
+    if (!ctx) return;
+
+    const W = window.innerWidth;
+    const H = window.innerHeight;
+    canvas.width = W;
+    canvas.height = H;
+
+    // Initialize particles
+    particlesRef.current = Array.from({ length: 60 }, (_, i) => {
+      const x = Math.random() * W;
+      const y = Math.random() * H;
+      return {
+        x, y,
+        baseX: x, baseY: y,
+        vx: (Math.random() - 0.5) * 0.6,
+        vy: (Math.random() - 0.5) * 0.6,
+        size: i % 3 === 0 ? 2.5 : i % 3 === 1 ? 1.5 : 0.8,
+        opacity: i % 4 === 0 ? 0.35 : i % 4 === 1 ? 0.25 : 0.15,
+        color: i % 3 === 1 ? "#8FB332" : "#A4C639",
+      };
+    });
+
+    const INTERACTION_RADIUS = 100;
+    const MAX_PUSH = 35;
+
+    const animate = () => {
+      ctx.clearRect(0, 0, W, H);
+
+      for (const p of particlesRef.current) {
+        // Natural drift - slowly wander
+        p.baseX += p.vx;
+        p.baseY += p.vy;
+
+        // Bounce off edges
+        if (p.baseX < 0 || p.baseX > W) p.vx *= -1;
+        if (p.baseY < 0 || p.baseY > H) p.vy *= -1;
+
+        // Cursor repulsion
+        const dx = p.baseX - mouseRef.current.x;
+        const dy = p.baseY - mouseRef.current.y;
+        const dist = Math.sqrt(dx * dx + dy * dy);
+
+        let targetX = p.baseX;
+        let targetY = p.baseY;
+
+        if (dist < INTERACTION_RADIUS && dist > 0) {
+          const strength = (1 - dist / INTERACTION_RADIUS);
+          const angle = Math.atan2(dy, dx);
+          targetX = p.baseX + Math.cos(angle) * MAX_PUSH * strength;
+          targetY = p.baseY + Math.sin(angle) * MAX_PUSH * strength;
+        }
+
+        // Smooth lerp towards target
+        p.x += (targetX - p.x) * 0.08;
+        p.y += (targetY - p.y) * 0.08;
+
+        // Draw particle
+        ctx.beginPath();
+        ctx.arc(p.x, p.y, p.size, 0, Math.PI * 2);
+        ctx.fillStyle = p.color;
+        ctx.globalAlpha = p.opacity;
+        ctx.fill();
+      }
+
+      ctx.globalAlpha = 1;
+      animFrameRef.current = requestAnimationFrame(animate);
+    };
+
+    animate();
+
+    const onMouseMove = (e: MouseEvent) => {
+      mouseRef.current = { x: e.clientX, y: e.clientY };
+    };
+    window.addEventListener("mousemove", onMouseMove);
+
+    return () => {
+      cancelAnimationFrame(animFrameRef.current);
+      window.removeEventListener("mousemove", onMouseMove);
+    };
+  }, []);
+
+  return (
+    <canvas
+      ref={canvasRef}
+      className="absolute inset-0 w-full h-full pointer-events-none"
+    />
+  );
+}
 
 function MatchaContent({ images }: { images: HTMLImageElement[] }) {
   const containerRef = useRef<HTMLDivElement>(null);
   const canvasRef = useRef<HTMLCanvasElement>(null);
+
+  // Suppress Framer Motion's false-positive "non-static position" warning.
+  // The container IS relative — FM checks computed style before the
+  // stylesheet is guaranteed to have applied.
+  useEffect(() => {
+    const original = console.warn;
+    console.warn = (...args: unknown[]) => {
+      if (typeof args[0] === "string" && args[0].includes("non-static position")) return;
+      original(...args);
+    };
+    return () => { console.warn = original; };
+  }, []);
 
   const { scrollYProgress } = useScroll({
     target: containerRef,
@@ -103,10 +221,49 @@ function MatchaContent({ images }: { images: HTMLImageElement[] }) {
   const opacityC = useTransform(smoothProgress, [0.45, 0.5, 0.65, 0.7], [0, 1, 1, 0]);
   const opacityD = useTransform(smoothProgress, [0.7, 0.75, 1], [0, 1, 1]);
 
+  // Gradient overlays that change with scroll
+  const gradientOpacity = useTransform(smoothProgress, [0, 0.3, 0.7, 1], [0.1, 0.3, 0.5, 0.8]);
+  const gradientHue = useTransform(smoothProgress, [0, 0.25, 0.5, 0.75, 1], [120, 100, 80, 60, 40]);
+  
+  // Use useMotionTemplate for string interpolation
+  const opacityScaled = useTransform(gradientOpacity, (opacity) => opacity * 0.1);
+  const opacityLeft = useTransform(gradientOpacity, (opacity) => opacity * 0.15);
+  const opacityRight = useTransform(gradientOpacity, (opacity) => opacity * 0.1);
+  
+  const mainGradient = useMotionTemplate`radial-gradient(ellipse at center, hsla(${gradientHue}, 60%, 50%, ${opacityScaled}) 0%, transparent 70%)`;
+  const cornerGradientLeft = useMotionTemplate`radial-gradient(circle at top left, rgba(164, 198, 57, ${opacityLeft}) 0%, transparent 50%)`;
+  const cornerGradientRight = useMotionTemplate`radial-gradient(circle at bottom right, rgba(164, 198, 57, ${opacityRight}) 0%, transparent 50%)`;
+
   return (
-    <div ref={containerRef} className="relative w-full bg-[#050505]" style={{ height: "400vh" }}>
+    <div ref={containerRef} className="relative w-full bg-[#050505]" style={{ height: "400vh", position: "relative" }}>
       <div className="sticky top-0 w-full h-[100dvh] overflow-hidden bg-[#050505]">
         <canvas ref={canvasRef} className="absolute inset-0 w-full h-full block pointer-events-none" />
+
+        {/* Gradient Overlays */}
+        <motion.div 
+          className="absolute inset-0 pointer-events-none"
+          style={{
+            background: mainGradient,
+          }}
+        />
+        
+        {/* Corner gradient accents */}
+        <motion.div 
+          className="absolute top-0 left-0 w-96 h-96 pointer-events-none"
+          style={{
+            background: cornerGradientLeft,
+          }}
+        />
+        
+        <motion.div 
+          className="absolute bottom-0 right-0 w-96 h-96 pointer-events-none"
+          style={{
+            background: cornerGradientRight,
+          }}
+        />
+
+        {/* Floating Particles */}
+        <FloatingParticles scrollProgress={smoothProgress} />
 
         <div className="absolute inset-0 flex flex-col items-center justify-center pointer-events-none text-center m-0 px-6">
           
@@ -216,5 +373,9 @@ export default function MatchaExperience() {
     );
   }
 
-  return <MatchaContent images={images} />;
+  return (
+    <>
+      <MatchaContent images={images} />
+    </>
+  );
 }
